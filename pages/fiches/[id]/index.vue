@@ -74,6 +74,9 @@ async function supprimerFiche() {
 const peutEditer = computed(() =>
   fiche.value && (isAdmin.value || (fiche.value.cree_par?.matricule === profile.value?.matricule && ['brouillon', 'rejetee'].includes(fiche.value.statut))))
 
+const peutModifier = computed(() =>
+  fiche.value && (isAdmin.value || fiche.value.cree_par?.matricule === profile.value?.matricule))
+
 const peutValider = computed(() =>
   fiche.value && canValidate.value && ['en_attente', 'en_validation'].includes(fiche.value.statut))
 </script>
@@ -128,7 +131,7 @@ const peutValider = computed(() =>
       </div>
 
       <!-- Actions de workflow -->
-      <div v-if="peutValider || peutEditer" class="card p-5 space-y-3">
+      <div v-if="peutValider || peutEditer || peutModifier" class="card p-5 space-y-3">
         <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-300">Actions</h2>
         <div class="flex flex-wrap gap-3">
           <button v-if="fiche.statut === 'brouillon'" class="btn-primary" @click="changerStatut('en_attente')">Soumettre</button>
@@ -138,6 +141,9 @@ const peutValider = computed(() =>
           <button v-if="peutValider" class="btn-danger" @click="changerStatut('rejetee')">
             <Icon name="x" class="w-4 h-4" /> Rejeter
           </button>
+ <NuxtLink v-if="peutModifier" :to="`/fiches/nouvelle?modifier=${fiche.id}`" class="btn-secondary">
+            <Icon name="edit" class="w-4 h-4" /> Modifier la fiche
+          </NuxtLink>
           <NuxtLink v-if="fiche.statut === 'validee'" :to="`/fiches/${fiche.id}/document`" class="btn-secondary">
             <Icon name="download" class="w-4 h-4" /> Générer le PDF
           </NuxtLink>

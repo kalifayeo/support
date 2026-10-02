@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { resolveLogoDataUri } from '~/utils/pdfLogo'
+import { telechargerPdf } from '~/utils/telechargerPdf'
 
 const route = useRoute()
 const router = useRouter()
@@ -131,7 +132,10 @@ async function genererPdf() {
       }),
     }
 
-    pdfMake.createPdf(docDefinition).download(`${r.numero}.pdf`)
+    await telechargerPdf(pdfMake.createPdf(docDefinition), `${r.numero}.pdf`, supabase)
+  } catch (e: any) {
+    console.error(e)
+    alert(`Le PDF n'a pas pu être téléchargé : ${e?.message ?? e}`)
   } finally {
     generatingPdf.value = false
   }

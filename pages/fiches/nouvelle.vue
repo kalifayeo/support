@@ -6,6 +6,9 @@ const { profile } = useProfile()
 const route = useRoute()
 const router = useRouter()
 
+const modifierId = (route.query.modifier as string) || ''
+const modeModification = !!modifierId
+const numeroFiche = ref('')
 const typeCode = (route.query.type as string) || 'FA'
 const formType = ref<any>(null)
 
@@ -33,7 +36,7 @@ const creationAgentEnCours = ref(false)
 
 const materiel = reactive({
   categorie_id: '', marque: '', modele: '', reference: '',
-  numero_serie: '', imei: '', capacite: '', ram: '', stockage: '', os: '', accessoires: '',
+  numero_serie: '', cle_activation: '', imei: '', capacite: '', ram: '', stockage: '', os: '', accessoires: '',
 })
 
 const observations = ref('')
@@ -47,6 +50,21 @@ onMounted(async () => {
   formType.value = ft
   directions.value = dirs ?? []
   categories.value = cats ?? []
+
+  if (modeModification) {
+    const { data: f } = await supabase.from('forms').select('*, form_types(code)').eq('id', modifierId).maybeSingle()
+    if (!f) { error.value = 'Fiche introuvable ou accès refusé.'; return }
+    numeroFiche.value = f.numero
+    const { data: fd } = await supabase.from('form_data').select('contenu').eq('form_id', modifierId).maybeSingle()
+    form.direction_id = f.direction_id ?? ''
+    await chargerServices()
+    form.service_id = f.service_id ?? ''
+    await chargerAgents()
+    form.utilisateur_concerne_id = f.utilisateur_concerne_id ?? ''
+    Object.assign(materiel, fd?.contenu?.materiel ?? {})
+    observations.value = fd?.contenu?.observations ?? ''
+    return
+  }
 
   if (profile.value) {
     form.direction_id = profile.value.direction_id ?? ''
@@ -134,6 +152,16 @@ async function soumettre(brouillon: boolean) {
 
   saving.value = true
   try {
+    if (modeModification) {
+      const { error: mErr } = await supabase.rpc('modifier_fiche', {
+        p_form_id: modifierId, p_direction_id: form.direction_id, p_service_id: form.service_id,
+        p_utilisateur_id: form.utilisateur_concerne_id,
+        p_contenu: { materiel: { ...materiel }, observations: observations.value },
+      })
+      if (mErr) throw mErr
+      router.push(`/fiches/${modifierId}`)
+      return
+    }
     const { data: fiche, error: fErr } = await supabase.from('forms').insert({
       form_type_id: formType.value.id,
       direction_id: form.direction_id,
@@ -162,7 +190,7 @@ async function soumettre(brouillon: boolean) {
 <template>
   <div class="max-w-2xl space-y-5">
     <div>
-      <h1 class="text-xl font-bold text-slate-800 dark:text-slate-100">{{ formType?.nom || 'Nouvelle fiche' }}</h1>
+      <h1 class="text-xl font-bold text-slate-800 dark:text-slate-100">{{ modeModification ? `Modifier la fiche ${numeroFiche}` : (formType?.nom || 'Nouvelle fiche') }}</h1>
       <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Les informations existantes en base sont sélectionnées, jamais ressaisies.</p>
     </div>
 
@@ -239,6 +267,7 @@ async function soumettre(brouillon: boolean) {
         <div><label class="label">Modèle</label><input v-model="materiel.modele" class="input" /></div>
         <div><label class="label">Référence</label><input v-model="materiel.reference" class="input" /></div>
         <div><label class="label">Numéro de série</label><input v-model="materiel.numero_serie" class="input" /></div>
+        <div class="sm:col-span-2"><label class="label">Clé d'activation du système (licence)</label><input v-model="materiel.cle_activation" class="input" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" /></div>
         <div><label class="label">IMEI (si téléphone)</label><input v-model="materiel.imei" class="input" /></div>
         <div><label class="label">RAM</label><input v-model="materiel.ram" class="input" /></div>
         <div><label class="label">Stockage</label><input v-model="materiel.stockage" class="input" /></div>
@@ -255,7 +284,13 @@ async function soumettre(brouillon: boolean) {
 
     <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
 
-    <div class="flex gap-3">
+    <div v-if="modeModification" class="flex gap-3">
+      <NuxtLink :to="`/fiches/${modifierId}`" class="btn-secondary flex-1 text-center">Annuler</NuxtLink>
+      <button class="btn-primary flex-1" :disabled="saving" @click="soumettre(false)">
+        {{ saving ? 'Enregistrement...' : 'Enregistrer les modifications' }}
+      </button>
+    </div>
+    <div v-else class="flex gap-3">
       <button class="btn-secondary flex-1" :disabled="saving" @click="soumettre(true)">Enregistrer brouillon</button>
       <button class="btn-primary flex-1" :disabled="saving" @click="soumettre(false)">
         {{ saving ? 'Envoi...' : 'Soumettre la fiche' }}

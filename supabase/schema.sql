@@ -1070,7 +1070,7 @@ language sql stable security definer set search_path = public as $$
     dir.nom, srv.nom,
     cp.nom, cp.prenom, cp.matricule, cp.fonction,
     ag.nom, ag.prenom, ag.matricule, ag.fonction,
-    fd.contenu->'materiel', fd.contenu->>'observations'
+    (fd.contenu->'materiel') - 'cle_activation', fd.contenu->>'observations'
   from documents d
   join forms f on f.id = d.form_id
   left join form_types ft on ft.id = f.form_type_id
@@ -1085,3 +1085,6 @@ $$;
 
 revoke all on function verifier_document(text) from public;
 grant execute on function verifier_document(text) to anon, authenticated;
+
+
+-- Voir aussi supabase/migration-modifier-fiche.sql (fonction modifier_fiche)

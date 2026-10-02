@@ -42,6 +42,8 @@ export default defineNuxtConfig({
       appName: 'Support',
       orgName: 'DSI',
       supabaseUrl: process.env.SUPABASE_URL,
+      // Adresse publique du site (utilisée dans le QR code des fiches PDF)
+      siteUrl: process.env.SITE_URL || 'https://support-kappa-eight.vercel.app',
     },
   },
 

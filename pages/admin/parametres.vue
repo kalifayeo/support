@@ -200,6 +200,9 @@ async function enregistrer() {
       <p v-if="savedMessage" class="text-sm text-emerald-600">{{ savedMessage }}</p>
 
       <button class="btn-primary" :disabled="saving" @click="enregistrer">{{ saving ? 'Enregistrement...' : 'Enregistrer tout' }}</button>
+
+      <!-- Modèle de la fiche PDF (organisation, textes, signatures, pied de page) -->
+      <FicheModeleEditor />
     </div>
   </AdminShell>
 </template>

@@ -70,7 +70,7 @@ onMounted(async () => {
           <p class="text-slate-400 dark:text-slate-500 text-xs mb-1">Matériel</p>
           <div class="grid grid-cols-2 gap-2">
             <template v-for="(val, key) in doc.materiel" :key="key">
-              <p v-if="val" class="text-xs"><span class="text-slate-400 dark:text-slate-500 capitalize">{{ String(key).replace('_', ' ') }} :</span> {{ val }}</p>
+              <p v-if="val && key !== 'cle_activation'" class="text-xs"><span class="text-slate-400 dark:text-slate-500 capitalize">{{ String(key).replace('_', ' ') }} :</span> {{ val }}</p>
             </template>
           </div>
         </div>
